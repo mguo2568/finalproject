@@ -1,0 +1,142 @@
+---
+title: "BST260 Final Project Proposal"
+author: "Annie Guo"
+date: 2026-11-18
+recipient: "BST260 Teaching Team, Fall 2026"
+---
+
+# Introduction
+
+The datasets analyzed in this project include CDC Firearm Mortality, RAND Gun Legislation, and CDC Homicide Mortality. The research investigates whether the firearm mortality rate (death counts per 100,000 total population, adjusted for population size and age distribution of each state) in the United States from 2014 to 2022 is impacted by the number of restrictive and permissive legislative changes. The three datasets provide information on the population within 50 states and special district of the United States.\
+A permissive legislative change is defined as a new law that makes accessing or using firearms easier compared to the status quo. A restrictive legislative change is a new law that renders accessing or using firearms more difficult compared to the status quo. The dataset gives an effect label ("Permissive" or "Restrictive") to each LawID (a unique code for each law in the dataset), and no LawID misses an effect label. This allows us to obtain the number of permissive and restrictive laws in each year, which are non-negative integers.\
+The continuous, numeric outcome variable is the average firearm mortality rate in the United States each year. Given that the rates were adjusted for population size of each state, it makes sense to calculate the overall rate in the U.S. for each year by averaging the state rates. We can also first solve for population size of each state by dividing the number of deaths by the death rate. Then, we can use the total number of deaths in a given year divided by the total population size that year to obtain the overall death date. Since there is missing data before 2014, and considering the timeliness of the data, the analysis is restricted to 2014 to 2022. The years are unique, integer values.\
+Based on the murders dataset, Michigan and Georgia are in the top 10 lists for both murder rate (murder counts per 100,000 population) and state population as a proportion of the total U.S. population. Therefore, the two states can have a large impact on the overall murder rate of the U.S. Given that many murders are committed using firearms, the project plans to take a closer look at the potential association between the number of permissive and restrictive legislative changes, firearm mortality rates, and murder rates in these two states. For comparison purpose, the murder rate is also a continuous, floating point variable. States are coded as factors for graphing in R.\
+Potential confounders that may associate with both firearm (murder) mortality rate and the number of gun legislative changes include firearm ownership, economic condition, demographic characteristics (for example, proportions of biological sex at birth), and political climate.
+
+# CDC Firearm Mortality
+
+```{r}
+# CDC Firearm Mortality
+# Read and view the data
+cdcmort <- read.csv("D:/finalproject/vignettes/firearm_mortality_by_state.csv")
+View(cdcmort)
+str(cdcmort)
+```
+
+```{r}
+library(ggplot2)
+library(dplyr)
+meanmort <- cdcmort |> group_by(YEAR) |> summarise(mean(Death.Rate))
+meanmort
+```
+
+```{r}
+plot(unique(cdcmort$YEAR), meanmort[[2]], ylim=c(0,20), xlab="Year", ylab="Average Firearm Mortality Rate")
+```
+
+# RAND Gun Legislation
+
+```{r}
+# data acquisition
+if (!requireNamespace("readxl", quietly = TRUE)) {
+  install.packages("readxl")
+}
+
+if (!exists("lawdat")) {
+  url <- "https://tinyurl.com/randgunlaw"
+  tf <- tempfile(fileext = ".xlsx")
+
+  download.file(url, destfile = tf, mode = "wb", quiet = FALSE)
+
+  lawdat <- readxl::read_xlsx(tf, sheet = 2)
+}
+```
+
+```{r}
+# Rename some variables
+library(dplyr)
+nd = lawdat |> rename( id=`Law ID`, state=State, 
+  abbr=`State Postal Abbreviation`, fips=`FIPS Code`, 
+  numclass=`Law Class (num)`, lawclass=`Law Class`, lawclasssub=`Law Class Subtype`, 
+  handorlong=`Handguns or Long Guns`, effect=`Effect`, 
+  changetype=`Type of Change`, edatenote=`Effective Date Note`, 
+  effyear=`Effective Date Year`, effmonth=`Effective Date Month`, 
+  effday=`Effective Date Day`, citation=`Statutory Citation`, 
+  content=`Content`, supyear=`Supersession Date Year`, 
+  supmonth=`Supersession Date Month`, supday=`Supersession Date Day`, 
+  ageformin=`Age for Minimum Age Laws`, 
+  handwaitdays=`Length of Waiting Period (days, handguns)`, 
+  addit=`Additional Context and Notes`, 
+  discrep=`Discrepancies`)
+```
+
+```{r}
+# `effdate` is a column with date values
+library(lubridate)
+nd = nd |> mutate(effdate=ymd(paste(effyear, effmonth, effday, sep="-")))
+```
+
+```{r}
+#View(nd)
+str(nd)
+```
+
+```{r}
+any(is.na(nd$effect))
+```
+
+```{r}
+library(plotly)
+g1 = ggplot(nd |> filter(effect=="Permissive", effdate > ymd("2005-01-01")), 
+   aes(x=effdate, text=paste(state,lawclass))) + geom_histogram(binwidth=365) +
+   ggtitle("Counts of permissive legislative changes after 2005")
+ggplotly(g1)
+```
+
+```{r}
+library(plotly)
+g2 = ggplot(nd |> filter(effect=="Restrictive", effdate > ymd("2005-01-01")), 
+   aes(x=effdate, text=paste(state,lawclass))) + geom_histogram(binwidth=365) +
+   ggtitle("Counts of restrictive legislative changes after 2005")
+ggplotly(g2)
+```
+
+# CDC Homicide Mortality
+
+```{r}
+library(dslabs)
+View(murders)
+str(murders)
+```
+
+```{r}
+murders <- murders |> mutate(murder_rate = total / population * 100000) |> arrange(desc(murder_rate))
+
+top_murd <- murders[[6]][1:10]
+top_state <- as.factor(murders[[2]][1:10])
+
+cbind(murders[[2]][1:10], top_murd)
+```
+
+```{r}
+barplot(top_murd, names.arg=top_state, xlab="State", ylab="Murder Rate", ylim=c(0,20))
+```
+
+```{r}
+murders_pop <- murders
+murders_pop <- murders_pop |> mutate(population_prop=population/sum(population)) |> arrange(desc(population_prop))
+
+top_pop <- murders_pop[[7]][1:10]
+top_pop_state <- as.factor(murders_pop[[2]][1:10])
+
+cbind(murders_pop[[2]][1:10], top_pop)
+```
+
+```{r}
+barplot(top_pop, names.arg=top_pop_state, xlab="State", ylab="Population Proportion", ylim=c(0,0.2))
+```
+
+```{r}
+intersect(murders[[2]][1:10], murders_pop[[2]][1:10])
+```
+
