@@ -1,0 +1,74 @@
+“is there any way to indicate who this is addressed to in the YAML header in a qmd file”
+
+“how to fix the following code:”
+
+r
+# data acquisition
+if (!requireNamespace("readxl")) install.packages("readxl")
+library(readxl)
+if (!exists("lawdat")) {
+  download.file("https://tinyurl.com/randgunlaw", (tf <- tempfile()))
+  lawdat = read_xlsx(tf, 2)
+}
+“I got this error:”
+
+text
+Error in utils::unzip(zip_path, list = TRUE) :
+error -103 with zipfile in unzGetCurrentFileInfo
+“can you help debug this: Warning: package ‘readxl’ is in use and will not be installed”
+
+“why does this path not exist: cdcmort <- readxl::read_xlsx("D:/finalproject/vignettes/firearm_mortality_by_state")”
+
+“if I have a vector that is the weight of each state, and I have another vector that is the death rate of each state, how can I calculated the weighted average death rate?”
+
+“how can I make this one vector with multiple elements: as.vector(unique(cdcmort$YEAR))”
+
+“what about the following, why does it say they have different lengths: as.vector(meanmort[2])”
+
+“which function in R should I use if I want a bar graph with x and y specified by me”
+
+“how to fix this error” — with a screenshot showing this code:
+
+r
+murders <- murders |> mutate(murder_rate = total / population * 100000) |>
+  arrange(desc(murder_rate))
+
+top_murd <- murders[[6]][1:10]
+top_state <- as.factor(murders[[2]][1:10])
+barplot(top_murd, top_state, xlab="State", ylab="Murder Rate")
+“can I add data labels to the graph”
+
+“how to fix this code:” — with a screenshot showing:
+
+r
+plot(top_murd, names.arg=top_state, xlab="State", ylab="Murder Rate",
+     ylim=c(0,20), type="b")
+“why are these line segements” — with a screenshot showing:
+
+r
+plot(top_state, top_murd, xlab="State", ylab="Murder Rate",
+     ylim=c(0,20), type="b")
+“if I have two vectors, how to find the overlapping elements”
+
+“the U.S. has 50 states and 1 special district of DC?”
+
+“I have the death rates of different years in my dataset (numerical), this is considered as continuous data?”
+
+“in the relationship between firearm mortality rate within the U.S. and number of permissive / restrictive gun laws, what can be potential confounders”
+
+“what about for a country level project?”
+
+“what is wrong with this code:”
+
+r
+library(ggplot2)
+meanmort <- (cdcmort |> mutate(Population=Deaths./Death.Rate) |>
+  group_by(YEAR) |> summarise(sum(Deaths.)/sum(Population)))
+meanmort
+
+
+
+
+
+
+
