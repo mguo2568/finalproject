@@ -18,8 +18,9 @@ Potential confounders that may associate with both firearm (murder) mortality ra
 ```{r}
 # CDC Firearm Mortality
 # Read and view the data
-cdcmort <- read.csv("D:/finalproject/vignettes/firearm_mortality_by_state.csv")
-View(cdcmort)
+data(cdcfiremort, package = "finalproject")
+cdcmort <- cdcfiremort
+#View(cdcmort)
 str(cdcmort)
 ```
 
@@ -38,42 +39,15 @@ plot(unique(cdcmort$YEAR), meanmort[[2]], ylim=c(0,20), xlab="Year", ylab="Avera
 
 ```{r}
 # data acquisition
-if (!requireNamespace("readxl", quietly = TRUE)) {
-  install.packages("readxl")
-}
-
-if (!exists("lawdat")) {
-  url <- "https://tinyurl.com/randgunlaw"
-  tf <- tempfile(fileext = ".xlsx")
-
-  download.file(url, destfile = tf, mode = "wb", quiet = FALSE)
-
-  lawdat <- readxl::read_xlsx(tf, sheet = 2)
-}
-```
-
-```{r}
-# Rename some variables
-library(dplyr)
-nd = lawdat |> rename( id=`Law ID`, state=State, 
-  abbr=`State Postal Abbreviation`, fips=`FIPS Code`, 
-  numclass=`Law Class (num)`, lawclass=`Law Class`, lawclasssub=`Law Class Subtype`, 
-  handorlong=`Handguns or Long Guns`, effect=`Effect`, 
-  changetype=`Type of Change`, edatenote=`Effective Date Note`, 
-  effyear=`Effective Date Year`, effmonth=`Effective Date Month`, 
-  effday=`Effective Date Day`, citation=`Statutory Citation`, 
-  content=`Content`, supyear=`Supersession Date Year`, 
-  supmonth=`Supersession Date Month`, supday=`Supersession Date Day`, 
-  ageformin=`Age for Minimum Age Laws`, 
-  handwaitdays=`Length of Waiting Period (days, handguns)`, 
-  addit=`Additional Context and Notes`, 
-  discrep=`Discrepancies`)
+data(gunleg, package = "finalproject")
+lawdat <- gunleg
+nd = lawdat
 ```
 
 ```{r}
 # `effdate` is a column with date values
 library(lubridate)
-nd = nd |> mutate(effdate=ymd(paste(effyear, effmonth, effday, sep="-")))
+nd = nd |> mutate(effdate=ymd(paste(Effective.Date.Year, Effective.Date.Month, Effective.Date.Day, sep="-")))
 ```
 
 ```{r}
@@ -82,21 +56,21 @@ str(nd)
 ```
 
 ```{r}
-any(is.na(nd$effect))
+any(is.na(nd$Effect))
 ```
 
 ```{r}
 library(plotly)
-g1 = ggplot(nd |> filter(effect=="Permissive", effdate > ymd("2005-01-01")), 
-   aes(x=effdate, text=paste(state,lawclass))) + geom_histogram(binwidth=365) +
+g1 = ggplot(nd |> filter(Effect=="Permissive", effdate > ymd("2005-01-01")), 
+   aes(x=effdate, text=paste(State,Law.Class))) + geom_histogram(binwidth=365) +
    ggtitle("Counts of permissive legislative changes after 2005")
 ggplotly(g1)
 ```
 
 ```{r}
 library(plotly)
-g2 = ggplot(nd |> filter(effect=="Restrictive", effdate > ymd("2005-01-01")), 
-   aes(x=effdate, text=paste(state,lawclass))) + geom_histogram(binwidth=365) +
+g2 = ggplot(nd |> filter(Effect=="Restrictive", effdate > ymd("2005-01-01")), 
+   aes(x=effdate, text=paste(State,Law.Class))) + geom_histogram(binwidth=365) +
    ggtitle("Counts of restrictive legislative changes after 2005")
 ggplotly(g2)
 ```
@@ -105,7 +79,7 @@ ggplotly(g2)
 
 ```{r}
 library(dslabs)
-View(murders)
+#View(murders)
 str(murders)
 ```
 
@@ -140,3 +114,48 @@ barplot(top_pop, names.arg=top_pop_state, xlab="State", ylab="Population Proport
 intersect(murders[[2]][1:10], murders_pop[[2]][1:10])
 ```
 
+------------------------------------------------------------------------
+
+AI use: The AI model used is the OpenAI GPT-6 Luna in the Harvard Sandbox. Prompts: 
+“is there any way to indicate who this is addressed to in the YAML header in a qmd file” (learned that I can add a recipient in the YAML header)
+
+“how to fix the following code:” (need to add "wb" to indicate binary mode for Windows computer)
+
+r data acquisition if (!requireNamespace("readxl")) install.packages("readxl") library(readxl) if (!exists("lawdat")) { download.file("https://tinyurl.com/randgunlaw", (tf \<- tempfile())) lawdat = read_xlsx(tf, 2) } “I got this error:”
+
+text Error in utils::unzip(zip_path, list = TRUE) : error -103 with zipfile in unzGetCurrentFileInfo “can you help debug this: Warning: package ‘readxl’ is in use and will not be installed”
+
+“why does this path not exist: cdcmort \<-  readxl::read_xlsx("D:/finalproject/vignettes/firearm_mortality_by_state")” (this is a CSV, not xslx, and should not read data like this anyway)
+
+“if I have a vector that is the weight of each state, and I have another vector that is the death rate of each state, how can I calculated the weighted average death rate?” (did not make use of this)
+
+“how can I make this one vector with multiple elements: as.vector(unique(cdcmort\$YEAR))” (this is already a vector)
+
+“what about the following, why does it say they have different lengths: as.vector(meanmort\[2\])” (for this and below, need to use meanmort[[2]] to obtain a vector, otherwise get a dataframe)
+
+“which function in R should I use if I want a bar graph with x and y specified by me” (learned that I should use barplot)
+
+“how to fix this error” — with a screenshot showing this code:
+
+r murders \<- murders \|\> mutate(murder_rate = total / population \* 100000) \|\> arrange(desc(murder_rate))
+
+top_murd \<- murders\[\[6\]\]\[1:10\] top_state \<- as.factor(murders\[\[2\]\]\[1:10\]) barplot(top_murd, top_state, xlab="State", ylab="Murder Rate") “can I add data labels to the graph”
+(did not make use of this)
+
+“how to fix this code:” — with a screenshot showing:
+
+r plot(top_murd, names.arg=top_state, xlab="State", ylab="Murder Rate", ylim=c(0,20), type="b") “why are these line segements” — with a screenshot showing:
+
+r plot(top_state, top_murd, xlab="State", ylab="Murder Rate", ylim=c(0,20), type="b") “if I have two vectors, how to find the overlapping elements”
+
+“the U.S. has 50 states and 1 special district of DC?”
+
+“I have the death rates of different years in my dataset (numerical), this is considered as continuous data?”
+
+“in the relationship between firearm mortality rate within the U.S. and number of permissive / restrictive gun laws, what can be potential confounders”
+
+“what about for a country level project?”
+
+“what is wrong with this code:”
+
+r library(ggplot2) meanmort \<- (cdcmort \|\> mutate(Population=Deaths./Death.Rate) \|\> group_by(YEAR) \|\> summarise(sum(Deaths.)/sum(Population))) meanmort
